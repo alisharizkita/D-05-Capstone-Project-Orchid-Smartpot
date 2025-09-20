@@ -1,0 +1,224 @@
+# =============================================
+# .gitignore for Smart Pot Orchid Project
+# =============================================
+
+# ====================
+# SENSITIVE FILES (WAJIB IGNORE!)
+# ====================
+
+# Database Configuration (contains passwords)
+backend/api/config/database.php
+backend/api/config/config.php
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.backup
+
+# ====================
+# LOGS & TEMPORARY FILES
+# ====================
+
+# Application logs
+backend/api/logs/
+logs/
+*.log
+error.log
+access.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Cache files
+cache/
+backend/api/cache/
+*.cache
+
+# ====================
+# IDE & EDITOR FILES
+# ====================
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# PhpStorm
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Notepad++
+nppBackup/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ====================
+# SYSTEM FILES
+# ====================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.lnk
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+
+# Linux
+*~
+.directory
+
+# ====================
+# PHP SPECIFIC
+# ====================
+
+# Composer
+vendor/
+composer.lock
+composer.phar
+
+# PHP sessions
+session/
+sessions/
+
+# PHP uploads (if any)
+uploads/
+backend/uploads/
+
+# ====================
+# DATABASE FILES
+# ====================
+
+# SQLite databases (if used for testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps
+*.sql.backup
+database_backup/
+dumps/
+
+# ====================
+# WEB SERVER FILES
+# ====================
+
+# Apache
+.htaccess.backup
+.htaccess.local
+
+# Nginx
+nginx.conf.backup
+
+# ====================
+# NODE.JS (if used for frontend build tools)
+# ====================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+
+# Package files
+package-lock.json
+yarn.lock
+
+# ====================
+# DOCUMENTATION & TESTING
+# ====================
+
+# PHPUnit
+phpunit.xml.backup
+.phpunit.result.cache
+tests/coverage/
+
+# Documentation builds
+docs/build/
+docs/_build/
+
+# ====================
+# PROJECT SPECIFIC FILES
+# ====================
+
+# Test database setup
+test_database_connection.php.backup
+setup_database.php.backup
+
+# Mock sensor data files
+mock_data/
+test_data/
+
+# Development configuration
+config.dev.php
+database.dev.php
+
+# Backup files
+*.backup
+*.bak
+backup/
+
+# ====================
+# DEPLOYMENT FILES
+# ====================
+
+# Deployment scripts
+deploy.sh
+deploy.bat
+deployment/
+
+# Production configs
+*.production.php
+config.production.php
+
+# ====================
+# MISCELLANEOUS
+# ====================
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Image thumbnails
+thumbs/
+thumbnails/
+
+# Generated files
+generated/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# API documentation
+apidoc/
