@@ -57,7 +57,7 @@ const pageStyles = `
     text-align: center;
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
-    text-decoration: none; /* Menghilangkan garis bawah dari link */
+    text-decoration: none; 
   }
   .card:hover {
     transform: translateY(-10px);
@@ -146,7 +146,7 @@ export default function OrchidSelectionPage() {
             // --- PERBAIKAN: Menggunakan tag <a> untuk navigasi ---
             <a 
               key={orchid.id} 
-              href={`/monitoring.tsx?type=${orchid.id}&name=${orchid.name}`} 
+              href={`/monitoring`} 
               className="card"
             >
               <div>
