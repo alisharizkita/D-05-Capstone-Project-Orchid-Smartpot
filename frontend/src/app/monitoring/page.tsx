@@ -112,6 +112,9 @@ function MonitoringDashboard() {
   const [historicalData, setHistoricalData] = useState<{ labels: string[]; temperature: number[]; humidity: number[]; lightIntensity: number[]; soilMoisture: number[]; }>({ labels: [], temperature: [], humidity: [], lightIntensity: [], soilMoisture: [] });
   const [alerts, setAlerts] = useState<Alert[]>([ { id: 1, type: 'warning', message: 'Kelembaban tanah rendah', time: '5 menit lalu' }, { id: 2, type: 'info', message: 'Penyiraman otomatis aktif', time: '2 jam lalu' } ]);
   const [showCharts, setShowCharts] = useState(false);
+  
+  // PERBAIKAN: State untuk menyimpan waktu yang hanya diatur di client
+  const [currentTime, setCurrentTime] = useState('');
 
   useEffect(() => {
     // Mengambil nama dari URL menggunakan Web API standar yang stabil
@@ -133,6 +136,13 @@ function MonitoringDashboard() {
         soilMoisture.push(parseInt((40 + Math.random() * 40).toFixed(0), 10));
     }
     setHistoricalData({ labels, temperature, humidity, lightIntensity, soilMoisture });
+
+    // PERBAIKAN: Mengatur waktu awal dan interval update hanya di client
+    const formatTime = () => new Date().toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit'});
+    setCurrentTime(formatTime());
+    const timer = setInterval(() => setCurrentTime(formatTime()), 1000);
+
+    return () => clearInterval(timer); // Membersihkan interval saat komponen unmount
   }, []);
 
   useEffect(() => {
@@ -150,7 +160,7 @@ function MonitoringDashboard() {
             lightIntensity: [...prev.lightIntensity.slice(1), newLight],
             soilMoisture: [...prev.soilMoisture.slice(1), newSoil]
         }));
-    }, 5000);
+    }, 300000);
     return () => clearInterval(interval);
   }, []);
   
@@ -164,7 +174,6 @@ function MonitoringDashboard() {
 
   // Fungsi utilitas
   const getStatusColor = (value: number, min: number, max: number): string => { if (value < min || value > max) return '#ef4444'; if (value < min + (max-min)*0.1 || value > max - (max-min)*0.1) return '#f97316'; return '#22c55e'; };
-  const formatTime = (): string => new Date().toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit'});
   const dismissAlert = (alertId: number) => setAlerts(alerts.filter(alert => alert.id !== alertId));
 
   return (
@@ -175,7 +184,8 @@ function MonitoringDashboard() {
                 <a href="/" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>← Kembali</a>
                 <div style={{textAlign: 'center'}}>
                     <h1 style={{fontSize: '1.5rem', fontWeight: '700', color: '#1f2937'}}>Monitoring {name}</h1>
-                    <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Update terakhir: {formatTime()}</p>
+                    {/* PERBAIKAN: Menampilkan waktu dari state, bukan memanggil fungsi langsung */}
+                    <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Update terakhir: {currentTime}</p>
                 </div>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                     <span style={{height: '0.75rem', width: '0.75rem', backgroundColor: '#22c55e', borderRadius: '9999px'}}></span>
