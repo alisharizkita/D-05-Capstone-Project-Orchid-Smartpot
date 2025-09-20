@@ -146,7 +146,7 @@ export default function OrchidSelectionPage() {
             // --- PERBAIKAN: Menggunakan tag <a> untuk navigasi ---
             <a 
               key={orchid.id} 
-              href={`/monitoring`} 
+              href={`/monitoring?type=${orchid.id}&name=${orchid.name}`} 
               className="card"
             >
               <div>
