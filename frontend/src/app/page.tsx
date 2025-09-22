@@ -20,13 +20,14 @@ const pageStyles = `
     min-height: 100vh;
     padding: 2rem;
     background: #FFFFF6;
-    font-family: sans-serif;
+    font-family: 'Poppins';
   }
   .title {
-    font-size: 3rem;
+    font-size: 4rem;
     font-weight: bold;
     color: black;
     margin-bottom: 1rem;
+    font-family:'Montserrat';
     text-align: center;
     text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
   }
@@ -67,6 +68,8 @@ const pageStyles = `
   .card h2 {
     margin: 0 0 1rem 0;
     font-size: 1.8rem;
+    font-family: 'Poppins';
+    font-weight: bold;
     color: black;
   }
   .cardDescription {
@@ -104,7 +107,7 @@ const pageStyles = `
     font-size: 0.8rem;
   }
   .selectButton {
-    background: linear-gradient(45deg, #00ff88, #00ccff);
+    background: #D9D9D9;
     color: #1a2c3a;
     border: none;
     padding: 8px 18px;
@@ -116,7 +119,7 @@ const pageStyles = `
   }
   .selectButton:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0,255,136,0.3);
+    box-shadow: 0 10px 30px #acacacff;
   }
   .footer {
     width: 100%;
@@ -133,10 +136,7 @@ const pageStyles = `
 export default function OrchidSelectionPage() {
   return (
     <>
-      {/* Menyisipkan CSS langsung ke dalam halaman */}
       <style>{pageStyles}</style>
-
-      {/* Menggunakan nama kelas biasa, bukan objek 'styles' */}
       <main className="mainContainer">
         
         <h1 className="title">Choose Your Orchid Type</h1>
@@ -144,7 +144,6 @@ export default function OrchidSelectionPage() {
 
         <div className="cardsContainer">
           {orchidData.map((orchid) => (
-            // --- PERBAIKAN: Menggunakan tag <a> untuk navigasi ---
             <a 
               key={orchid.id} 
               href={`/monitoring?type=${orchid.id}&name=${orchid.name}`} 
