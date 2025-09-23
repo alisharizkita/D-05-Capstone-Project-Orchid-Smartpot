@@ -197,17 +197,93 @@ function MonitoringDashboard() {
         <main className="main-content">
             <div className="widget-grid">
                 {/* Widget Suhu */}
-                <div className="widget"><div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}><span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>🌡️</span><h3 style={{fontWeight: '600', color: '#374151'}}>Suhu</h3></div><div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}><div style={{display: 'flex', alignItems: 'baseline'}}><span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.temperature}</span><span style={{color: '#6b7280', marginLeft: '0.25rem'}}>°C</span></div><div style={{textAlign: 'right', fontSize: '0.875rem'}}><div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.temperature, 20, 30) }}></div><span>Normal</span></div></div></div>
+                <div className="widget">
+                  <div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>🌡️</span>
+                    <h3 style={{fontWeight: '600', color: '#374151'}}>Suhu</h3>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                      <div style={{display: 'flex', alignItems: 'baseline'}}>
+                        <span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.temperature}</span>
+                        <span style={{color: '#6b7280', marginLeft: '0.25rem'}}>°C</span>
+                        </div>
+                        <div style={{textAlign: 'right', fontSize: '0.875rem'}}>
+                          <div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.temperature, 20, 30) }}></div>
+                          <span>Normal</span></div></div></div>
                 {/* Widget Kelembaban */}
-                <div className="widget"><div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}><span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>💧</span><h3 style={{fontWeight: '600', color: '#374151'}}>Kelembaban</h3></div><div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}><div style={{display: 'flex', alignItems: 'baseline'}}><span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.humidity}</span><span style={{color: '#6b7280', marginLeft: '0.25rem'}}>%</span></div><div style={{textAlign: 'right', fontSize: '0.875rem'}}><div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.humidity, 60, 80) }}></div><span>Optimal</span></div></div></div>
+                <div className="widget">
+                  <div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>💧</span>
+                    <h3 style={{fontWeight: '600', color: '#374151'}}>Kelembaban</h3>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                      <div style={{display: 'flex', alignItems: 'baseline'}}>
+                        <span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.humidity}</span>
+                        <span style={{color: '#6b7280', marginLeft: '0.25rem'}}>%</span>
+                        </div>
+                        <div style={{textAlign: 'right', fontSize: '0.875rem'}}>
+                          <div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.humidity, 60, 80) }}></div>
+                          <span>Optimal</span></div></div></div>
                 {/* Widget Intensitas Cahaya */}
-                <div className="widget"><div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}><span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>☀️</span><h3 style={{fontWeight: '600', color: '#374151'}}>Intensitas Cahaya</h3></div><div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}><div style={{display: 'flex', alignItems: 'baseline'}}><span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.lightIntensity}</span><span style={{color: '#6b7280', marginLeft: '0.25rem'}}>lux</span></div><div style={{textAlign: 'right', fontSize: '0.875rem'}}><div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.lightIntensity, 300, 600) }}></div><span>Baik</span></div></div></div>
+                <div className="widget">
+                  <div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>☀️</span>
+                    <h3 style={{fontWeight: '600', color: '#374151'}}>Intensitas Cahaya</h3>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                      <div style={{display: 'flex', alignItems: 'baseline'}}>
+                        <span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.lightIntensity}</span>
+                        <span style={{color: '#6b7280', marginLeft: '0.25rem'}}>lux</span>
+                        </div>
+                        <div style={{textAlign: 'right', fontSize: '0.875rem'}}>
+                          <div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.lightIntensity, 300, 600) }}></div>
+                          <span>Baik</span></div></div></div>
                 {/* Widget Kelembaban Media */}
-                <div className="widget"><div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}><span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>🌱</span><h3 style={{fontWeight: '600', color: '#374151'}}>Kelembaban Media</h3></div><div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}><div style={{display: 'flex', alignItems: 'baseline'}}><span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.soilMoisture}</span><span style={{color: '#6b7280', marginLeft: '0.25rem'}}>%</span></div><div style={{textAlign: 'right', fontSize: '0.875rem'}}><div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.soilMoisture, 40, 70) }}></div><span>Normal</span></div></div></div>
+                <div className="widget">
+                  <div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>🌱</span>
+                    <h3 style={{fontWeight: '600', color: '#374151'}}>Kelembaban Media</h3>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                      <div style={{display: 'flex', alignItems: 'baseline'}}>
+                        <span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.soilMoisture}</span>
+                        <span style={{color: '#6b7280', marginLeft: '0.25rem'}}>%</span>
+                        </div>
+                        <div style={{textAlign: 'right', fontSize: '0.875rem'}}>
+                          <div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.soilMoisture, 40, 70) }}></div>
+                          <span>Normal</span></div></div></div>
                 {/* Widget pH Media */}
-                <div className="widget"><div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}><span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>⚗️</span><h3 style={{fontWeight: '600', color: '#374151'}}>pH Media</h3></div><div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}><div style={{display: 'flex', alignItems: 'baseline'}}><span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.ph}</span><span style={{color: '#6b7280', marginLeft: '0.25rem'}}>pH</span></div><div style={{textAlign: 'right', fontSize: '0.875rem'}}><div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.ph, 5.5, 6.5) }}></div><span>Optimal</span></div></div></div>
+                <div className="widget">
+                  <div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>⚗️</span>
+                    <h3 style={{fontWeight: '600', color: '#374151'}}>pH Media</h3>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                      <div style={{display: 'flex', alignItems: 'baseline'}}>
+                        <span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.ph}</span>
+                        <span style={{color: '#6b7280', marginLeft: '0.25rem'}}>pH</span>
+                        </div>
+                        <div style={{textAlign: 'right', fontSize: '0.875rem'}}>
+                          <div style={{height: '0.5rem', width: '4rem', borderRadius: '9999px', backgroundColor: getStatusColor(monitoringData.ph, 5.5, 6.5) }}></div>
+                          <span>Optimal</span></div></div></div>
                 {/* Widget Baterai */}
-                <div className="widget"><div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}><span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>🔋</span><h3 style={{fontWeight: '600', color: '#374151'}}>Baterai Sensor</h3></div><div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}><div style={{display: 'flex', alignItems: 'baseline'}}><span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.batteryLevel}</span><span style={{color: '#6b7280', marginLeft: '0.25rem'}}>%</span></div><div style={{width: '5rem'}}><div style={{height: '1rem', backgroundColor: '#e5e7eb', borderRadius: '9999px', overflow: 'hidden'}}><div style={{height: '100%', borderRadius: '9999px', width: `${monitoringData.batteryLevel}%`, backgroundColor: monitoringData.batteryLevel > 20 ? '#22c55e' : '#ef4444' }}></div></div></div></div></div>
+                <div className="widget">
+                  <div style={{display: 'flex', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <span style={{fontSize: '1.5rem', marginRight: '0.75rem'}}>🔋</span>
+                    <h3 style={{fontWeight: '600', color: '#374151'}}>Baterai Sensor</h3>
+                    </div>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
+                      <div style={{display: 'flex', alignItems: 'baseline'}}>
+                        <span style={{fontSize: '1.875rem', fontWeight: '700'}}>{monitoringData.batteryLevel}</span>
+                        <span style={{color: '#6b7280', marginLeft: '0.25rem'}}>%</span>
+                        </div>
+                        <div style={{width: '5rem'}}>
+                          <div style={{height: '1rem', backgroundColor: '#e5e7eb', borderRadius: '9999px', overflow: 'hidden'}}>
+                            <div style={{height: '100%', borderRadius: '9999px', width: `${monitoringData.batteryLevel}%`, backgroundColor: monitoringData.batteryLevel > 20 ? '#22c55e' : '#ef4444' }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
             </div>
 
             {/* Bagian Grafik */}
