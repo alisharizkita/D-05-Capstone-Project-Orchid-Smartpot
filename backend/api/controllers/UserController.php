@@ -25,7 +25,7 @@ if (count($uri) < 2 || $uri[1] !== "users") {
 
 // koneksi db
 $database = new Database();
-$db = $database->connect();
+$db = $database->getConnection();
 $userController = new UserController($db);
 
 // endpoint handling
