@@ -1,66 +1,82 @@
 <?php
 // =============================================
-// File: backend/api/users.php
-// RESTful API untuk User
+// File: backend/api/controllers/UserController.php
+// Controller untuk handle user API requests
 // =============================================
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json; charset=UTF-8");
 
-require_once __DIR__ . "/../config/Database.php";
-require_once __DIR__ . "/../models/Users.php";
-require_once __DIR__ . "/../controllers/UserController.php";
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../models/Users.php';
 
-$request_method = $_SERVER["REQUEST_METHOD"];
-$uri = explode("/", trim(parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH), "/"));
+class UserController {
+    private $db;
+    private $user;
 
-// /api/users
-if (count($uri) < 2 || $uri[1] !== "users") {
-    http_response_code(404);
-    echo json_encode([
-        "status" => "error",
-        "message" => "Invalid endpoint"
-    ]);
-    exit;
-}
+    public function __construct() {
+        $database = new Database();
+        $this->db = $database->getConnection();
+        $this->user = new User($this->db);
+    }
 
-// koneksi db
-$database = new Database();
-$db = $database->getConnection();
-$userController = new UserController($db);
-
-// endpoint handling
-switch ($request_method) {
-    case "POST":
-        // /api/users/register
-        if (count($uri) === 3 && $uri[2] === "register") {
-            $data = json_decode(file_get_contents("php://input"), true);
-            $response = $userController->register($data);
+    // POST /api/users/register
+    public function register($data) {
+        if (empty($data['username']) || empty($data['email']) || empty($data['password']) || empty($data['phone_number'])) {
+            return ["status" => "error", "message" => "All fields are required"];
         }
-        // /api/users/login
-        elseif (count($uri) === 3 && $uri[2] === "login") {
-            $data = json_decode(file_get_contents("php://input"), true);
-            $response = $userController->login($data);
-        }
-        else {
-            http_response_code(404);
-            $response = ["status" => "error", "message" => "Invalid POST endpoint"];
-        }
-        break;
 
-    case "GET":
-        // /api/users/{id}
-        if (count($uri) === 3 && is_numeric($uri[2])) {
-            $response = $userController->getProfile((int)$uri[2]);
+        $this->user->username = $data['username'];
+        $this->user->email = $data['email'];
+        $this->user->password = $data['password'];
+        $this->user->phone_number = $data['phone_number'];
+
+        if ($this->user->register()) {
+            return ["status" => "success", "message" => "User registered successfully"];
         } else {
-            http_response_code(404);
-            $response = ["status" => "error", "message" => "Invalid GET endpoint"];
+            return ["status" => "error", "message" => "Failed to register user"];
         }
-        break;
+    }
 
-    default:
-        http_response_code(405);
-        $response = ["status" => "error", "message" => "Method not allowed"];
-        break;
+    // POST /api/users/login
+    public function login($data) {
+        if (empty($data['username']) || empty($data['password'])) {
+            return ["status" => "error", "message" => "Username and password are required"];
+        }
+
+        $this->user->username = $data['username'];
+        $this->user->password = $data['password'];
+
+        $user = $this->user->login();
+        if ($user) {
+            return [
+                "status" => "success",
+                "message" => "Login successful",
+                "data" => [
+                    "user_id" => $user['user_id'],
+                    "username" => $user['username'],
+                    "email" => $user['email'],
+                    "phone_number" => $user['phone_number'],
+                    "created_at" => $user['created_at']
+                ]
+            ];
+        } else {
+            return ["status" => "error", "message" => "Invalid username or password"];
+        }
+    }
+
+    // GET /api/users/{id}
+    public function getProfile($id) {
+        if (!is_numeric($id)) {
+            return ["status" => "error", "message" => "Invalid user ID"];
+        }
+
+        $user = $this->user->getUserById($id);
+        if ($user) {
+            return [
+                "status" => "success",
+                "message" => "User profile retrieved",
+                "data" => $user
+            ];
+        } else {
+            return ["status" => "error", "message" => "User not found"];
+        }
+    }
 }
-
-echo json_encode($response, JSON_PRETTY_PRINT);

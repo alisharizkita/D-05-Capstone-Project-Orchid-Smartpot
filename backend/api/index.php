@@ -83,7 +83,7 @@ elseif (count($uri) >= 2 && $uri[1] === "users") {
         require_once __DIR__ . "/controllers/UserController.php";
         
         $database = new Database();
-        $db = $database->connect();
+        $db = $database->getConnection();
         $userController = new UserController($db);
         
         switch ($request_method) {

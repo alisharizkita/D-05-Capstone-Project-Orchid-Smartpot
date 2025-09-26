@@ -18,11 +18,11 @@ class User {
 
     // Register user
     public function register() {
-        $query = "INSERT INTO " . $this->table . " 
-                  (username, email, password, phone_number, created_at, updated_at, is_active) 
-                  VALUES (:username, :email, :password, :phone_number, NOW(), NOW(), 1)";
+        $sql = "INSERT INTO users (username, email, password, phone_number, created_at, updated_at, is_active)
+        VALUES (:username, :email, :password, :phone_number, NOW(), NOW(), TRUE)";
 
-        $stmt = $this->conn->prepare($query);
+
+        $stmt = $this->conn->prepare($sql);
 
         $this->username = htmlspecialchars(strip_tags($this->username));
         $this->email = htmlspecialchars(strip_tags($this->email));
