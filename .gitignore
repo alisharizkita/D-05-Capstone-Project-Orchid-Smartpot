@@ -9,6 +9,7 @@
 # Database Configuration (contains passwords)
 backend/api/config/database.php
 backend/api/config/config.php
+/vendor/
 
 # Environment files
 .env
@@ -26,6 +27,8 @@ logs/
 *.log
 error.log
 access.log
+backend/.env
+backend/NotificationService.php
 
 # Temporary files
 tmp/
