@@ -27,6 +27,7 @@ logs/
 error.log
 access.log
 backend/.env
+backend/NotificationService.php
 
 # Temporary files
 tmp/
