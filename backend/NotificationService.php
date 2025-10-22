@@ -13,9 +13,8 @@ class NotificationService {
     public function __construct() {
         // --- KREDENSIAL TWILIO ANDA ---
         // SID dari snippet Anda sudah dimasukkan.
-        $sid    = "AC2ba07238ca6441b9f6cbe8748dc20bc4"; 
-        // GANTI INI DENGAN AUTH TOKEN ASLI DARI DASHBOARD TWILIO ANDA
-        $token  = "9e635f0f4d0b97ac4e37cb71e98702de";                 
+        $sid    = getenv('TWILIO_ACCOUNT_SID');
+        $token  = getenv('TWILIO_AUTH_TOKEN');            
         // ------------------------------------------
 
         $this->client = new Client($sid, $token);
