@@ -102,9 +102,16 @@ const pageStyles = `
         color: #bdc3c7;
     }
     .password-toggle {
-        position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%);
+        position: absolute; right: 1rem; top: 50%; bottom: 50%; transform: translateY(-50%);
         background: none; border: none; cursor: pointer; font-size: 1.3rem; color: #7f8c8d;
         transition: color 0.3s ease; padding: 0.5rem;
+    }
+    
+    .password-toggle img {
+    width: 24px; 
+    height: 24px; 
+    opacity: 0.6;
+    transition: opacity 0.2s;
     }
     .password-toggle:hover {
         color: #667eea;
@@ -340,6 +347,7 @@ export default function LoginPage() {
     const form = e.target as HTMLFormElement;
     const username = (form.elements.namedItem('reg_username') as HTMLInputElement).value;
     const email = (form.elements.namedItem('reg_email') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('reg_phone') as HTMLInputElement).value;
     const password = (form.elements.namedItem('reg_password') as HTMLInputElement).value;
     const confirmPassword = (form.elements.namedItem('reg_confirm_password') as HTMLInputElement).value;
 
@@ -359,7 +367,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await apiService.register(username, email, password);
+      const response = await apiService.register(username, email, password, phone);
       
       if (response.success) {
         setAlertType('success');
@@ -440,13 +448,17 @@ export default function LoginPage() {
                         required 
                         disabled={isLoading}
                       />
-                      <button 
-                        type="button" 
-                        className="password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? '🙈' : '👁️'}
-                      </button>
+                    <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                    <img 
+                    src={showPassword ? "hidepass.svg" : "showpass.svg"} 
+                    alt={showPassword ? "Hide password" : "Show password"} 
+                    />
+                    </button>
                   </div>
                   
                   <div className="form-options">
@@ -532,6 +544,18 @@ export default function LoginPage() {
               </div>
               
               <div className="form-group">
+                <label className="form-label" htmlFor="reg_phone">Nomor Telepon</label>
+                <input 
+                  type="text" 
+                  id="reg_phone" 
+                  name="reg_phone"
+                  className="form-input" 
+                  placeholder="08xxxxxxxxxx (Opsional)" 
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="form-group">
                 <label className="form-label" htmlFor="reg_password">Password</label>
                 <input 
                   type={showRegPassword ? "text" : "password"}
@@ -543,13 +567,17 @@ export default function LoginPage() {
                   minLength={6}
                   disabled={isLoading}
                 />
-                <button 
-                  type="button" 
-                  className="password-toggle"
-                  onClick={() => setShowRegPassword(!showRegPassword)}
-                >
-                  {showRegPassword ? '🙈' : '👁️'}
-                </button>
+                    <button 
+                    type="button" 
+                    className="password-toggle"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    aria-label={showRegPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                    <img 
+                    src={showRegPassword ? "hidepass.svg" : "showpass.svg"} 
+                    alt={showRegPassword ? "Hide password" : "Show password"} 
+                    />
+                    </button>
               </div>
               
               <div className="form-group">
