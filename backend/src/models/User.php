@@ -1,4 +1,6 @@
 <?php
+// src/models/User.php
+
 class User {
     private $conn;
     private $table = "users";
@@ -16,14 +18,26 @@ class User {
         $this->conn = $db;
     }
 
+    // Get all users
+    public function getAllUsers() {
+        $query = "SELECT user_id, username, email, phone_number, created_at, updated_at, is_active 
+                  FROM " . $this->table . " 
+                  ORDER BY created_at DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // Register user
     public function register() {
-        $sql = "INSERT INTO users (username, email, password, phone_number, created_at, updated_at, is_active)
-        VALUES (:username, :email, :password, :phone_number, NOW(), NOW(), TRUE)";
-
+        $sql = "INSERT INTO " . $this->table . " (username, email, password, phone_number, created_at, updated_at, is_active)
+                VALUES (:username, :email, :password, :phone_number, NOW(), NOW(), TRUE)";
 
         $stmt = $this->conn->prepare($sql);
 
+        // Sanitize input
         $this->username = htmlspecialchars(strip_tags($this->username));
         $this->email = htmlspecialchars(strip_tags($this->email));
         $this->password = password_hash($this->password, PASSWORD_BCRYPT);
@@ -63,4 +77,3 @@ class User {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
-?>
