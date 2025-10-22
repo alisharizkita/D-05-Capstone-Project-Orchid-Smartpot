@@ -340,6 +340,7 @@ export default function LoginPage() {
     const form = e.target as HTMLFormElement;
     const username = (form.elements.namedItem('reg_username') as HTMLInputElement).value;
     const email = (form.elements.namedItem('reg_email') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('reg_phone') as HTMLInputElement).value;
     const password = (form.elements.namedItem('reg_password') as HTMLInputElement).value;
     const confirmPassword = (form.elements.namedItem('reg_confirm_password') as HTMLInputElement).value;
 
@@ -359,7 +360,7 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await apiService.register(username, email, password);
+      const response = await apiService.register(username, email, password, phone);
       
       if (response.success) {
         setAlertType('success');
@@ -527,6 +528,18 @@ export default function LoginPage() {
                   className="form-input" 
                   placeholder="email@example.com" 
                   required 
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label" htmlFor="reg_phone">Nomor Telepon</label>
+                <input 
+                  type="text" 
+                  id="reg_phone" 
+                  name="reg_phone"
+                  className="form-input" 
+                  placeholder="08xxxxxxxxxx (Opsional)" 
                   disabled={isLoading}
                 />
               </div>

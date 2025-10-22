@@ -51,20 +51,22 @@ class User {
         return $stmt->execute();
     }
 
-    // Login user
+    // Login user - BISA DENGAN USERNAME ATAU EMAIL
     public function login() {
-        $query = "SELECT * FROM " . $this->table . " WHERE username = :username LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(":username", $this->username);
-        $stmt->execute();
+        $query = "SELECT * FROM " . $this->table . " 
+              WHERE username = :identifier OR email = :identifier 
+              LIMIT 1";
+    $stmt = $this->conn->prepare($query);
+    $stmt->bindValue(":identifier", $this->username);
+    $stmt->execute();
 
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($user && password_verify($this->password, $user['password'])) {
-            return $user;
-        }
-        return false;
+    if ($user && password_verify($this->password, $user['password'])) {
+        return $user;
     }
+        return false;
+    }   
 
     // Get user by ID
     public function getUserById($id) {

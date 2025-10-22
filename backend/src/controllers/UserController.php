@@ -43,14 +43,15 @@ class UserController {
     // POST /users/register
     public function register($data) {
         // Validasi input dasar
-        if (empty($data['username']) || empty($data['email']) || empty($data['password']) || empty($data['phone_number'])) {
-            return Response::error("Semua kolom wajib diisi", 400);
+        if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
+        return Response::error("Username, email, dan password wajib diisi", 400);
         }
 
         $this->user->username = $data['username'];
         $this->user->email = $data['email'];
-        $this->user->password = $data['password']; // Password akan di-hash di Model
-        $this->user->phone_number = $data['phone_number'];
+        $this->user->password = $data['password'];
+        // Phone number optional - set default jika kosong
+        $this->user->phone_number = !empty($data['phone_number']) ? $data['phone_number'] : '';
 
         try {
             if ($this->user->register()) {

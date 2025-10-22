@@ -9,6 +9,7 @@
 # Database Configuration (contains passwords)
 backend/api/config/database.php
 backend/api/config/config.php
+/vendor/
 
 # Environment files
 .env
