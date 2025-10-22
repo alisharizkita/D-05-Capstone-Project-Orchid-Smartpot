@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiService } from '../services/api';
 
 const pageStyles = `
     * {
@@ -63,15 +64,6 @@ const pageStyles = `
     .brand-description {
         font-size: 1rem; opacity: 0.8; max-width: 400px; line-height: 1.6; margin-bottom: 3rem;
     }
-    .feature-list {
-        display: flex; flex-direction: column; gap: 1rem; align-items: flex-start;
-    }
-    .feature-item {
-        display: flex; align-items: center; gap: 1rem; font-size: 1.1rem; opacity: 0.9;
-    }
-    .feature-icon {
-        font-size: 1.5rem; width: 40px; text-align: center;
-    }
     .right-section {
         flex: 0 0 550px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(20px);
         display: flex; flex-direction: column; justify-content: center; padding: 4rem;
@@ -99,7 +91,7 @@ const pageStyles = `
         display: block; color: #2c3e50; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.95rem;
     }
     .form-input {
-        width: 100%; padding: 1.2rem 1.2rem 1.2rem 1.2rem; border: 2px solid #e1e8ed;
+        width: 100%; padding: 1.2rem; border: 2px solid #e1e8ed;
         border-radius: 12px; font-size: 1rem; transition: all 0.3s ease; background: white; color: #2c3e50;
     }
     .form-input:focus {
@@ -108,13 +100,6 @@ const pageStyles = `
     }
     .form-input::placeholder {
         color: #bdc3c7;
-    }
-    .input-icon {
-        position: absolute; left: 1.2rem; top: 50%; transform: translateY(-50%);
-        font-size: 1.3rem; color: #7f8c8d; transition: color 0.3s ease;
-    }
-    .form-input:focus ~ .input-icon {
-        color: #667eea;
     }
     .password-toggle {
         position: absolute; right: 1.2rem; top: 50%; transform: translateY(-50%);
@@ -158,8 +143,9 @@ const pageStyles = `
     .login-button:active {
         transform: translateY(-1px);
     }
-    .login-button.loading {
-        pointer-events: none;
+    .login-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
     .login-button.loading::after {
         content: ''; position: absolute; top: 50%; left: 50%; width: 22px; height: 22px;
@@ -181,10 +167,18 @@ const pageStyles = `
     .divider span {
         background: rgba(255, 255, 255, 0.98); padding: 0 1.5rem; position: relative;
     }
-
+    .register-link {
+        text-align: center; color: #7f8c8d; font-size: 0.95rem;
+    }
+    .register-link a {
+        color: #667eea; font-weight: 600; text-decoration: none; cursor: pointer;
+    }
+    .register-link a:hover {
+        color: #764ba2; text-decoration: underline;
+    }
     .alert {
         padding: 1.2rem; border-radius: 12px; margin-bottom: 1.5rem;
-        display: none; animation: slideDown 0.3s ease-out; font-weight: 500;
+        animation: slideDown 0.3s ease-out; font-weight: 500;
     }
     @keyframes slideDown {
         from { opacity: 0; transform: translateY(-15px); }
@@ -196,19 +190,91 @@ const pageStyles = `
     .alert.success {
         background: rgba(39, 174, 96, 0.1); color: #27ae60; border: 1px solid rgba(39, 174, 96, 0.3);
     }
+    .alert.hidden {
+        display: none;
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        width: 90%;
+        max-width: 450px;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 2rem;
+        color: #7f8c8d;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    .modal-close:hover {
+        background: #f0f0f0;
+        color: #2c3e50;
+    }
+    .modal-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .modal-title {
+        font-size: 2rem;
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .modal-subtitle {
+        color: #7f8c8d;
+        font-size: 1rem;
+    }
+    
     .footer {
         position: absolute; bottom: 2rem; right: 4rem; color: #7f8c8d;
         font-size: 0.85rem; text-align: right;
     }
-    .particle {
-        position: absolute; background: rgba(255, 255, 255, 0.1); border-radius: 50%;
-        pointer-events: none; animation: floatUp 4s linear infinite;
-    }
-    @keyframes floatUp {
-        0% { opacity: 1; transform: translateY(0) scale(0); }
-        50% { opacity: 0.8; transform: translateY(-50vh) scale(1); }
-        100% { opacity: 0; transform: translateY(-100vh) scale(0); }
-    }
+    
     @media (max-width: 1200px) {
         .right-section { flex: 0 0 480px; padding: 3rem; }
         .brand-title { font-size: 3rem; }
@@ -220,101 +286,100 @@ const pageStyles = `
         .right-section { flex: 1; padding: 2rem; }
         .brand-title { font-size: 2.5rem; }
         .brand-logo { font-size: 4rem; }
-        .feature-list { display: none; }
         .footer { position: relative; bottom: auto; right: auto; text-align: center; margin-top: 2rem; }
+        .modal-content { padding: 2rem; }
     }
 `;
 
-// Komponen utama halaman login
 export default function LoginPage() {
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState<'success' | 'error'>('success');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
 
-  // Semua logika JavaScript dari tag <script> dipindahkan ke sini
-  useEffect(() => {
-    // Password toggle functionality
-    const togglePasswordBtn = document.getElementById('togglePassword');
-    const passwordInput = document.getElementById('password') as HTMLInputElement;
-    if (togglePasswordBtn && passwordInput) {
-        const handler = function(this: HTMLElement) {
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                this.textContent = '🙈';
-            } else {
-                passwordInput.type = 'password';
-                this.textContent = '👁️';
-            }
-        };
-        togglePasswordBtn.addEventListener('click', handler);
-        return () => togglePasswordBtn.removeEventListener('click', handler);
-    }
-  }, []);
+  // Login Handler
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setAlertMessage('');
 
-  useEffect(() => {
-    // Form submission
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        const handler = function(e: SubmitEvent) {
-            e.preventDefault();
-            
-            const usernameInput = document.getElementById('username') as HTMLInputElement;
-            const passwordInput = document.getElementById('password') as HTMLInputElement;
-            const loginBtn = document.getElementById('loginBtn') as HTMLButtonElement;
-            const alertEl = document.getElementById('alert') as HTMLDivElement;
+    const form = e.target as HTMLFormElement;
+    const username = (form.elements.namedItem('username') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
-            const username = usernameInput.value;
-            const password = passwordInput.value;
-
-            if (!loginBtn || !alertEl) return;
-
-            loginBtn.classList.add('loading');
-            loginBtn.textContent = '';
-            
-            setTimeout(() => {
-                if ((username === 'admin' && password === 'admin123') || (username === 'user@orchid.com' && password === 'password')) {
-                    alertEl.className = 'alert success';
-                    alertEl.textContent = '✅ Login berhasil! Mengalihkan ke dashboard...';
-                    alertEl.style.display = 'block';
-                    
-                    setTimeout(() => {
-                        window.location.href = '/selection'; 
-                    }, 1500);
-                    
-                } else {
-                    alertEl.className = 'alert error';
-                    alertEl.textContent = '❌ Username atau password salah!';
-                    alertEl.style.display = 'block';
-                    
-                    loginBtn.classList.remove('loading');
-                    loginBtn.textContent = 'Masuk ke Dashboard';
-                }
-            }, 2000);
-        };
-        loginForm.addEventListener('submit', handler);
-        return () => loginForm.removeEventListener('submit', handler);
-    }
-  }, []);
-  
-
-  useEffect(() => {
-    // --- Efek Tambahan ---
-    let particleInterval: NodeJS.Timeout | null = null;
-    if (typeof window !== 'undefined') {
-      const createParticle = () => {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        document.body.appendChild(particle);
-
+    try {
+      const response = await apiService.login(username, password);
+      
+      if (response.success) {
+        setAlertType('success');
+        setAlertMessage('✅ Login berhasil! Mengalihkan ke dashboard...');
+        
         setTimeout(() => {
-            particle.remove();
-        }, 4000);
+          window.location.href = '/selection';
+        }, 1500);
+      } else {
+        setAlertType('error');
+        setAlertMessage('❌ ' + (response.error || 'Username atau password salah!'));
       }
-      particleInterval = setInterval(createParticle, 500);
+    } catch (error) {
+      setAlertType('error');
+      setAlertMessage('❌ Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Cleanup interval on component unmount
-    return () => {
-        if (particleInterval) clearInterval(particleInterval);
-    };
-  }, []);
+  };
+
+  // Register Handler
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setAlertMessage('');
+
+    const form = e.target as HTMLFormElement;
+    const username = (form.elements.namedItem('reg_username') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('reg_email') as HTMLInputElement).value;
+    const password = (form.elements.namedItem('reg_password') as HTMLInputElement).value;
+    const confirmPassword = (form.elements.namedItem('reg_confirm_password') as HTMLInputElement).value;
+
+    // Validation
+    if (password !== confirmPassword) {
+      setAlertType('error');
+      setAlertMessage('❌ Password dan konfirmasi password tidak cocok!');
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setAlertType('error');
+      setAlertMessage('❌ Password minimal 6 karakter!');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await apiService.register(username, email, password);
+      
+      if (response.success) {
+        setAlertType('success');
+        setAlertMessage('✅ Registrasi berhasil! Silakan login.');
+        
+        setTimeout(() => {
+          setShowRegisterModal(false);
+          setAlertMessage('');
+        }, 2000);
+      } else {
+        setAlertType('error');
+        setAlertMessage('❌ ' + (response.error || 'Registrasi gagal!'));
+      }
+    } catch (error) {
+      setAlertType('error');
+      setAlertMessage('❌ Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
@@ -343,18 +408,47 @@ export default function LoginPage() {
                   <h2 className="login-title">Selamat Datang Kembali</h2>
                   <p className="login-subtitle">Masuk ke dashboard monitoring Anda</p>
               </div>
-              <div id="alert" className="alert"></div>
-              <form className="login-form" id="loginForm">
-                  {/* --- PERBAIKAN: Input fields ditambahkan kembali --- */}
+              
+              {alertMessage && (
+                <div className={`alert ${alertType}`}>
+                  {alertMessage}
+                </div>
+              )}
+              
+              <form className="login-form" onSubmit={handleLogin}>
                   <div className="form-group">
                       <label className="form-label" htmlFor="username">Username atau Email</label>
-                      <input type="text" id="username" className="form-input" placeholder="Masukkan username atau email" required />
+                      <input 
+                        type="text" 
+                        id="username" 
+                        name="username"
+                        className="form-input" 
+                        placeholder="Masukkan username atau email" 
+                        required 
+                        disabled={isLoading}
+                      />
                   </div>
+                  
                   <div className="form-group">
                       <label className="form-label" htmlFor="password">Password</label>
-                      <input type="password" id="password" className="form-input" placeholder="Masukkan password" required />
-                      <button type="button" className="password-toggle" id="togglePassword"></button>
+                      <input 
+                        type={showPassword ? "text" : "password"}
+                        id="password" 
+                        name="password"
+                        className="form-input" 
+                        placeholder="Masukkan password" 
+                        required 
+                        disabled={isLoading}
+                      />
+                      <button 
+                        type="button" 
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? '🙈' : '👁️'}
+                      </button>
                   </div>
+                  
                   <div className="form-options">
                       <label className="remember-me">
                           <input type="checkbox" id="remember" />
@@ -362,17 +456,127 @@ export default function LoginPage() {
                       </label>
                       <a href="#" className="forgot-password">Lupa password?</a>
                   </div>
-                  <button type="submit" className="login-button" id="loginBtn">
-                      Masuk ke Dashboard
+                  
+                  <button 
+                    type="submit" 
+                    className={`login-button ${isLoading ? 'loading' : ''}`}
+                    disabled={isLoading}
+                  >
+                      {isLoading ? '' : 'Masuk ke Dashboard'}
                   </button>
               </form>
+              
+              <div className="divider">
+                  <span>atau</span>
+              </div>
+              
+              <div className="register-link">
+                  Belum punya akun? <a onClick={() => setShowRegisterModal(true)}>Daftar sekarang</a>
+              </div>
           </div>
+          
           <div className="footer">
               © 2025 Orchid Monitoring System<br />
               Capstone D-05
           </div>
       </div>
+
+      {/* Register Modal */}
+      {showRegisterModal && (
+        <div className="modal-overlay" onClick={() => setShowRegisterModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="modal-close" 
+              onClick={() => setShowRegisterModal(false)}
+            >
+              ×
+            </button>
+            
+            <div className="modal-header">
+              <h2 className="modal-title">Buat Akun Baru</h2>
+              <p className="modal-subtitle">Daftar untuk mulai monitoring anggrek Anda</p>
+            </div>
+            
+            {alertMessage && (
+              <div className={`alert ${alertType}`}>
+                {alertMessage}
+              </div>
+            )}
+            
+            <form className="login-form" onSubmit={handleRegister}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="reg_username">Username</label>
+                <input 
+                  type="text" 
+                  id="reg_username" 
+                  name="reg_username"
+                  className="form-input" 
+                  placeholder="Pilih username" 
+                  required 
+                  minLength={3}
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label" htmlFor="reg_email">Email</label>
+                <input 
+                  type="email" 
+                  id="reg_email" 
+                  name="reg_email"
+                  className="form-input" 
+                  placeholder="email@example.com" 
+                  required 
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label" htmlFor="reg_password">Password</label>
+                <input 
+                  type={showRegPassword ? "text" : "password"}
+                  id="reg_password" 
+                  name="reg_password"
+                  className="form-input" 
+                  placeholder="Minimal 6 karakter" 
+                  required 
+                  minLength={6}
+                  disabled={isLoading}
+                />
+                <button 
+                  type="button" 
+                  className="password-toggle"
+                  onClick={() => setShowRegPassword(!showRegPassword)}
+                >
+                  {showRegPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+              
+              <div className="form-group">
+                <label className="form-label" htmlFor="reg_confirm_password">Konfirmasi Password</label>
+                <input 
+                  type={showRegPassword ? "text" : "password"}
+                  id="reg_confirm_password" 
+                  name="reg_confirm_password"
+                  className="form-input" 
+                  placeholder="Ketik ulang password" 
+                  required 
+                  minLength={6}
+                  disabled={isLoading}
+                />
+              </div>
+              
+              <button 
+                type="submit" 
+                className={`login-button ${isLoading ? 'loading' : ''}`}
+                disabled={isLoading}
+              >
+                {isLoading ? '' : 'Daftar Sekarang'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
