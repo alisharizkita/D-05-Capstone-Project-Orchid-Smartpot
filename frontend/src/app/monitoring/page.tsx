@@ -10,7 +10,6 @@ ChartJS.register(
   CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement
 );
 
-// Interface disesuaikan ke snake_case agar cocok dengan database
 interface MonitoringData {
   temperature: number; 
   humidity: number; 
@@ -28,12 +27,13 @@ interface Alert {
   time: string;
 }
 
-// Komponen CSS yang disematkan
 const PageStyles = () => (
     <style>{`
         .dashboard-container { padding: 2rem; background-color: #f3f4f6; min-height: 100vh; font-family: sans-serif; }
         .dashboard-header { background-color: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); padding: 1rem; margin-bottom: 2rem; border-radius: 0.5rem; }
         .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1280px; margin: auto; }
+        .backButton { color: #3b82f6; text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: background 0.2s; }
+        .backButton:hover { background: #eff6ff; }
         .widget-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
         .widget { background-color: white; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
         .chart-section { background-color: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); margin-top: 2rem; }
@@ -53,7 +53,6 @@ const PageStyles = () => (
         .widget-status { text-align: right; font-size: 0.875rem; }
         .status-bar { height: 0.5rem; width: 4rem; border-radius: 9999px; }
         
-        /* Water Level Bar Styles */
         .water-level-container {
             display: flex;
             align-items: center;
@@ -116,7 +115,8 @@ const PageStyles = () => (
 );
 
 function MonitoringDashboard() {
-  const [name, setName] = useState('Anggrek');
+  const [plantId, setPlantId] = useState<string | null>(null);
+  const [plantName, setPlantName] = useState('Anggrek');
   const [monitoringData, setMonitoringData] = useState<Partial<MonitoringData>>({});
   const [historicalData, setHistoricalData] = useState<{ 
     labels: string[]; 
@@ -133,17 +133,16 @@ function MonitoringDashboard() {
   });
   
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [showCharts, setShowCharts] = useState(false);
   const [currentTime, setCurrentTime] = useState('');
 
   const fetchSensorData = async () => {
+    if (!plantId) return;
+    
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) {
-        throw new Error("API URL not configured in .env.local");
-      }
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api';
 
-      const response = await fetch(`${apiUrl}/monitoring-data.php`);
+      // Fetch dengan plant_id
+      const response = await fetch(`${apiUrl}/monitoring-data.php?plant_id=${plantId}`);
       if (!response.ok) {
         throw new Error(`Gagal mengambil data: ${response.statusText}`);
       }
@@ -158,7 +157,7 @@ function MonitoringDashboard() {
           light_intensity: parseInt(latestData.light_intensity, 10),
           soil_moisture: parseFloat(latestData.soil_moisture),
           water_level: parseInt(latestData.water_level, 10),
-          connectionStatus: 'Connected (Dummy)',
+          connectionStatus: 'Connected',
           lastWatering: latestData.lastWatering,
         });
 
@@ -171,7 +170,7 @@ function MonitoringDashboard() {
             soil_moisture: historyData.datasets.soil_moisture,
         });
 
-        // Generate alerts based on water level
+        // Generate alerts based on conditions
         const currentWaterLevel = parseInt(latestData.water_level, 10);
         if (currentWaterLevel < 20) {
           setAlerts(prev => {
@@ -180,7 +179,7 @@ function MonitoringDashboard() {
               return [...prev, {
                 id: Date.now(),
                 type: 'warning',
-                message: 'Peringatan: Water level air sangat rendah! Segera isi ulang.',
+                message: 'Peringatan: Level air sangat rendah! Segera isi ulang.',
                 time: 'Baru saja'
               }];
             }
@@ -199,13 +198,19 @@ function MonitoringDashboard() {
   };
 
   useEffect(() => {
+    // Get plant_id and name from URL
     const params = new URLSearchParams(window.location.search);
+    const urlPlantId = params.get('plant_id');
     const urlName = params.get('name');
-    if (urlName) setName(urlName);
     
-    fetchSensorData();
-    const dataFetchInterval = setInterval(fetchSensorData, 5000);
+    if (urlPlantId) {
+      setPlantId(urlPlantId);
+    }
+    if (urlName) {
+      setPlantName(urlName);
+    }
     
+    // Format time
     const formatTime = () => new Date().toLocaleString('id-ID', { 
       hour: '2-digit', 
       minute: '2-digit', 
@@ -215,10 +220,21 @@ function MonitoringDashboard() {
     const timer = setInterval(() => setCurrentTime(formatTime()), 1000);
     
     return () => {
-      clearInterval(dataFetchInterval);
       clearInterval(timer);
     };
   }, []);
+
+  // Fetch data when plantId is available
+  useEffect(() => {
+    if (plantId) {
+      fetchSensorData();
+      const dataFetchInterval = setInterval(fetchSensorData, 5000);
+      
+      return () => {
+        clearInterval(dataFetchInterval);
+      };
+    }
+  }, [plantId]);
 
   // Chart Options
   const lineChartOptions = { 
@@ -285,7 +301,6 @@ function MonitoringDashboard() {
   
   const dismissAlert = (alertId: number) => setAlerts(alerts.filter(alert => alert.id !== alertId));
 
-  // Get water level status
   const getWaterLevelStatus = (level: number) => {
     if (level < 20) return { text: 'Rendah - Perlu Isi Ulang!', class: 'water-status-low' };
     if (level < 50) return { text: 'Sedang', class: 'water-status-medium' };
@@ -295,26 +310,52 @@ function MonitoringDashboard() {
   const waterLevel = monitoringData.water_level ?? 0;
   const waterStatus = getWaterLevelStatus(waterLevel);
 
+  // Show loading if no plantId
+  if (!plantId) {
+    return (
+      <>
+        <PageStyles />
+        <div style={{ 
+          display: 'flex', 
+          height: '100vh', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <h2>Plant ID tidak ditemukan</h2>
+          <a href="/selection" style={{color: '#3b82f6', textDecoration: 'underline'}}>
+            Kembali ke Selection
+          </a>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="dashboard-container">
         <PageStyles />
         <header className="dashboard-header">
              <div className="header-content">
-                <a href="/selection" style={{color: '#3b82f6', textDecoration: 'none', fontWeight: '600'}}>← Kembali</a>
+                <a href="/selection" className="backButton">← Kembali</a>
                 <div style={{textAlign: 'center'}}>
-                    <h1 style={{fontSize: '1.5rem', fontWeight: '700', color: '#1f2937'}}>Monitoring {name}</h1>
-                    <p style={{fontSize: '0.875rem', color: '#6b7280'}}>Update terakhir: {currentTime}</p>
+                    <h1 style={{fontSize: '1.5rem', fontWeight: '700', color: '#1f2937'}}>
+                      Monitoring {plantName}
+                    </h1>
+                    <p style={{fontSize: '0.875rem', color: '#6b7280'}}>
+                      Plant ID: {plantId} | Update terakhir: {currentTime}
+                    </p>
                 </div>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                     <span style={{
                       height: '0.75rem', 
                       width: '0.75rem', 
-                      backgroundColor: monitoringData.connectionStatus === 'Connected (Dummy)' ? '#3b82f6' : '#ef4444', 
+                      backgroundColor: monitoringData.connectionStatus === 'Connected' ? '#3b82f6' : '#ef4444', 
                       borderRadius: '9999px', 
-                      animation: monitoringData.connectionStatus === 'Connected (Dummy)' ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
+                      animation: monitoringData.connectionStatus === 'Connected' ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none'
                     }}></span>
                     <span style={{color: '#374151', fontWeight: '500'}}>
-                      {monitoringData.connectionStatus || '...'}
+                      {monitoringData.connectionStatus || 'Connecting...'}
                     </span>
                 </div>
             </div>
@@ -406,7 +447,6 @@ function MonitoringDashboard() {
                     </h2>
                 </div>
                 <div className="chart-grid">
-                    {/* Chart 1: Suhu - Kiri Atas */}
                     <div style={{border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem'}}>
                       <h3 style={{fontWeight: '600', textAlign: 'center', marginBottom: '0.5rem'}}>
                         Grafik Suhu (24 Jam Terakhir)
@@ -416,7 +456,6 @@ function MonitoringDashboard() {
                       </div>
                     </div>
                     
-                    {/* Chart 2: Kelembaban - Kanan Atas */}
                     <div style={{border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem'}}>
                       <h3 style={{fontWeight: '600', textAlign: 'center', marginBottom: '0.5rem'}}>
                         Kelembaban Udara vs Media
@@ -426,7 +465,6 @@ function MonitoringDashboard() {
                       </div>
                     </div>
                     
-                    {/* Chart 3: Water Tank - Kiri Bawah */}
                     <div style={{border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem'}}>
                       <h3 style={{fontWeight: '600', textAlign: 'center', marginBottom: '0.5rem'}}>
                         🚰 Visualisasi Tangki Air
@@ -447,7 +485,6 @@ function MonitoringDashboard() {
                       </div>
                     </div>
                     
-                    {/* Chart 4: Status Kesehatan - Kanan Bawah */}
                     <div style={{border: '1px solid #e5e7eb', padding: '1rem', borderRadius: '0.5rem'}}>
                       <h3 style={{fontWeight: '600', textAlign: 'center', marginBottom: '5rem'}}>
                         Status Kesehatan Keseluruhan

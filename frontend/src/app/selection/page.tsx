@@ -478,7 +478,7 @@ export default function OrchidSelectionPage() {
   const fetchPlants = async () => {
     try {
       setIsLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/8000';
       // Ganti dengan user_id yang sebenarnya dari session/auth
       const userId = 1; // TODO: Get from auth context
       
