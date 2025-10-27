@@ -2,16 +2,18 @@
 // src/controllers/UserController.php
 // Controller untuk handle user API requests
 
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../helpers/Response.php';
-require_once __DIR__ . '/../config/jwt_config.php';
-
 // Pastikan path ke vendor autoload sesuai dengan struktur project kamu
 // Jika composer ada di root project, path-nya mungkin: __DIR__ . '/../../vendor/autoload.php'
 $vendorPath = __DIR__ . '/../../vendor/autoload.php';
 if (file_exists($vendorPath)) {
     require_once $vendorPath;
+} else {
+    die("Autoload vendor tidak ditemukan di path: $vendorPath");
 }
+
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../helpers/Response.php';
+require_once __DIR__ . '/../config/jwt_config.php';
 
 use Firebase\JWT\JWT;
 

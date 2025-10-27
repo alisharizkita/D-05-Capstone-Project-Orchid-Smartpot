@@ -1,24 +1,26 @@
-<<<<<<< HEAD
-// src/app/services/api.ts
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// src/services/api.ts
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost';
 
-interface ApiResponse<T> {
+export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
 }
+
+type MaybeHeaders = Record<string, string> | undefined;
 
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
 
   constructor(baseURL: string) {
-    this.baseURL = baseURL;
+    this.baseURL = baseURL.replace(/\/+$/, ''); // trim trailing slash
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('auth_token');
     }
   }
 
+  // publicly callable
   setToken(token: string) {
     this.token = token;
     if (typeof window !== 'undefined') {
@@ -26,268 +28,152 @@ class ApiService {
     }
   }
 
+  getToken(): string | null {
+    return this.token;
+  }
+
   clearToken() {
     this.token = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
     }
   }
 
-  private async request<T>(
-    endpoint: string, 
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
+  private buildHeaders(extra?: MaybeHeaders) {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (extra) Object.assign(headers, extra);
+    if (this.token) headers['Authorization'] = `Bearer ${this.token}`;
+    return headers;
+  }
 
-    if (options.headers) {
-      Object.assign(headers, options.headers);
-    }
-
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-
+  private async safeJsonParse(response: Response) {
     try {
-      const response = await fetch(`${this.baseURL}/${endpoint}`, {
-=======
-// src/services/api.ts
-const API_BASE_URL = 'http://localhost:80'; // Sesuaikan dengan URL backend PHP Anda
-
-interface LoginResponse {
-  success: boolean;
-  data?: {
-    token: string;
-    user: {
-      user_id: number;
-      username: string;
-      email: string;
-    };
-  };
-  error?: string;
-}
-
-interface RegisterResponse {
-  success: boolean;
-  error?: string;
-}
-
-export const apiService = {
-  // Login - bisa pakai username atau email
-  async login(username: string, password: string): Promise<LoginResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/users/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        // Simpan token ke localStorage
-        if (result.data.token) {
-          localStorage.setItem('token', result.data.token);
-          localStorage.setItem('user', JSON.stringify(result.data.user));
-        }
-        return { success: true, data: result.data };
-      } else {
-        return { success: false, error: result.message };
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: 'Koneksi ke server gagal' };
-    }
-  },
-
-  // Register - phone_number opsional
-  async register(
-    username: string, 
-    email: string, 
-    password: string,
-    phone_number: string = ''
-  ): Promise<RegisterResponse> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/users/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-          phone_number: phone_number || '', // Kirim string kosong jika tidak diisi
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.status === 'success') {
-        return { success: true };
-      } else {
-        return { success: false, error: result.message };
-      }
-    } catch (error) {
-      console.error('Register error:', error);
-      return { success: false, error: 'Koneksi ke server gagal' };
-    }
-  },
-
-  // Logout
-  logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-  },
-
-  // Get token
-  getToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  },
-
-  // Get user
-  getUser(): any {
-    if (typeof window !== 'undefined') {
-      const user = localStorage.getItem('user');
-      return user ? JSON.parse(user) : null;
-    }
-    return null;
-  },
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  },
-
-  // API call dengan authentication
-  async fetchWithAuth(endpoint: string, options: RequestInit = {}): Promise<any> {
-    const token = this.getToken();
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    };
-
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
->>>>>>> 96921af4aef99d1d3f19270375fbc23a9d06a93f
-        ...options,
-        headers,
-      });
-
-<<<<<<< HEAD
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Request failed');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API Error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+      return await response.json();
+    } catch {
+      return null;
     }
   }
 
-  // Authentication
+  private async request<T = any>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}/${endpoint.replace(/^\/+/, '')}`;
+    const ctrl = new AbortController();
+    const timeout = typeof options.signal === 'undefined' ? setTimeout(() => ctrl.abort(), 20000) : undefined;
+
+    try {
+      const headers = this.buildHeaders(options.headers as MaybeHeaders);
+      const res = await fetch(url, { ...options, headers, signal: ctrl.signal });
+
+      if (timeout) clearTimeout(timeout);
+
+      const parsed = await this.safeJsonParse(res);
+
+      // Normalize backend variations:
+      // - { success: true, data: ... }
+      // - { status: 'success', data: ... }
+      // - plain data
+      if (parsed && (parsed.success === true || parsed.status === 'success')) {
+        return { success: true, data: parsed.data ?? parsed };
+      }
+
+      if (parsed && (parsed.success === false || parsed.status === 'error')) {
+        return { success: false, error: parsed.message || parsed.error || 'Request gagal' };
+      }
+
+      if (!res.ok) {
+        // if backend returned json with message field use it
+        const errMsg = parsed?.message || parsed?.error || `HTTP ${res.status} - ${res.statusText}`;
+        return { success: false, error: errMsg };
+      }
+
+      // if OK and no success flag, return parsed or empty object
+      return { success: true, data: (parsed as T) ?? (undefined as any) };
+    } catch (err: any) {
+      if (err && err.name === 'AbortError') {
+        return { success: false, error: 'Request timeout - Server tidak merespons' };
+      }
+      if (err && err.message && err.message.includes('Failed to fetch')) {
+        return { success: false, error: 'Tidak dapat terhubung ke server. Pastikan backend sudah berjalan dan CORS mengizinkan domain ini.' };
+      }
+      return { success: false, error: err?.message ?? 'Unknown error' };
+    }
+  }
+
+  // --- Auth ---
+  // Expect backend login to accept { username, password } and return token & user
   async login(username: string, password: string) {
-    const response = await this.request<{user: any; token: string}>('login.php', {
+    const response = await this.request<{ token: string; user: any }>('users/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
-    });
+  });
 
-    if (response.success && response.data?.token) {
-      this.setToken(response.data.token);
+    if (response.success && response.data) {
+      // backend kamu kirim token di dalam data.data.token
+      const token = (response.data as any).token || (response.data as any).data?.token;
+      const user = (response.data as any).user || (response.data as any).data?.user;
+
+      if (token) {
+        this.setToken(token);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+      }
     }
-
-    return response;
   }
 
-  // Register - BARU
-  async register(username: string, email: string, password: string) {
-    const response = await this.request<{user: any}>('register.php', {
+  return response;
+}
+
+  async register(username: string, email: string, password: string, phone_number?: string): Promise<ApiResponse> {
+    return this.request('users/register', {
       method: 'POST',
-      body: JSON.stringify({ username, email, password, phone }),
+      body: JSON.stringify({ username, email, password, phone_number }),
     });
-
-    return response;
   }
 
-  async logout() {
+  async logout(): Promise<ApiResponse> {
+    // optional: call backend logout if exists
+    const res = await this.request('auth/logout', { method: 'POST' });
+    // always clear token client-side
     this.clearToken();
+    return res.success ? { success: true } : res;
   }
 
-  // Monitoring Data
-  async getMonitoringData() {
-    return this.request<any[]>('monitoring-data.php');
+  // --- Orchid methods ---
+  async getAllOrchids() {
+    // Backend baca user_id dari token, jadi tidak perlu kirim userId
+    return this.request<any[]>('orchid/getAll', {
+      method: 'GET',
+    });
   }
 
-  async getCurrentMonitoring(orchidType: string) {
-    return this.request<any>(`monitoring-data.php?orchid_type=${orchidType}&latest=true`);
-  }
-
-  async getHistoricalData(orchidType: string, hours: number = 24) {
-    return this.request<any[]>(`monitoring-data.php?orchid_type=${orchidType}&hours=${hours}`);
-  }
-
-  // Orchid Types
-  async getOrchidTypes() {
-    return this.request<any[]>('orchid-types.php');
-  }
-
-  // Actions
-  async triggerWatering(orchidType: string) {
-    return this.request<any>('actions/water.php', {
+  async createOrchid(orchidData: { orchid_name: string; orchid_type: string; device_id?: string }) {
+    // Backend pakai token untuk tahu user_id
+    return this.request('orchid/create', {
       method: 'POST',
-      body: JSON.stringify({ orchid_type: orchidType }),
+      body: JSON.stringify(orchidData),
     });
   }
 
-  async generateReport(orchidType: string) {
-    return this.request<any>('reports/generate.php', {
-      method: 'POST',
-      body: JSON.stringify({ orchid_type: orchidType }),
-    });
-  }
+async deleteOrchid(orchidId: number) {
+  // Backend kemungkinan pakai /orchid/delete?id=...
+  return this.request(`orchid/delete?id=${encodeURIComponent(orchidId)}`, {
+    method: 'DELETE',
+  });
+}
 
-  // Alerts
-  async getAlerts(orchidType: string) {
-    return this.request<any[]>(`alerts.php?orchid_type=${orchidType}`);
-  }
 
-  async dismissAlert(alertId: number) {
-    return this.request<any>(`alerts.php?id=${alertId}`, {
-      method: 'DELETE',
-    });
+  // helper to get logged user from localStorage
+  getStoredUser() {
+    if (typeof window === 'undefined') return null;
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
   }
 }
 
-export const apiService = new ApiService(API_BASE_URL);
-=======
-      const result = await response.json();
-
-      // Jika token expired atau invalid
-      if (response.status === 401) {
-        this.logout();
-        return { success: false, error: 'Session expired. Please login again.' };
-      }
-
-      return result;
-    } catch (error) {
-      console.error('API error:', error);
-      return { success: false, error: 'Connection to server failed' };
-    }
-  },
-};
->>>>>>> 96921af4aef99d1d3f19270375fbc23a9d06a93f
+const apiService = new ApiService(API_BASE_URL);
+export { apiService };
+export default apiService;

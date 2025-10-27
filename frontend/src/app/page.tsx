@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
+import { useRouter } from 'next/navigation';
+
 
 const pageStyles = `
     * {
@@ -305,38 +307,39 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showRegPassword, setShowRegPassword] = useState(false);
+  const router = useRouter();
 
-  // Login Handler
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setAlertMessage('');
+  // Login Handler yang diperbarui
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setAlertMessage('');
 
-    const form = e.target as HTMLFormElement;
-    const username = (form.elements.namedItem('username') as HTMLInputElement).value;
-    const password = (form.elements.namedItem('password') as HTMLInputElement).value;
+  const form = e.target as HTMLFormElement;
+  const username = (form.elements.namedItem('username') as HTMLInputElement).value;
+  const password = (form.elements.namedItem('password') as HTMLInputElement).value;
 
-    try {
-      const response = await apiService.login(username, password);
-      
-      if (response.success) {
-        setAlertType('success');
-        setAlertMessage('✅ Login berhasil! Mengalihkan ke dashboard...');
-        
-        setTimeout(() => {
-          window.location.href = '/selection';
-        }, 1500);
-      } else {
-        setAlertType('error');
-        setAlertMessage('❌ ' + (response.error || 'Username atau password salah!'));
-      }
-    } catch (error) {
+  try {
+    const response = await apiService.login(username, password);
+
+    if (response.success && response.data?.token) {
+      // Simpan token di apiService (juga localStorage jika diperlukan)
+      apiService.setToken(response.data.token);
+
+      // Redirect langsung ke halaman selection
+      router.push('/selection');
+    } else {
       setAlertType('error');
-      setAlertMessage('❌ Terjadi kesalahan. Silakan coba lagi.');
-    } finally {
-      setIsLoading(false);
+      setAlertMessage('❌ ' + (response.error || 'Username atau password salah!'));
     }
-  };
+  } catch (error) {
+    setAlertType('error');
+    setAlertMessage('❌ Terjadi kesalahan. Silakan coba lagi.');
+    console.error('Login Error:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Register Handler
   const handleRegister = async (e: React.FormEvent) => {

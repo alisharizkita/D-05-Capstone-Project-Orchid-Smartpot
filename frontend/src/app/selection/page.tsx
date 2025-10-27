@@ -1,48 +1,122 @@
-'use client';
-
+"use client";
 import React, { useState, useEffect } from 'react';
 
-interface Plant {
-  id: number;
-  plant_name: string;
-  plant_type: string;
-  device_id: string;
-  created_at: string;
+
+// ===== API SERVICE (Embedded) =====
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost';
+
+class ApiService {
+  private baseURL: string;
+  private token: string | null = null;
+
+  constructor(baseURL: string) {
+    this.baseURL = baseURL;
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('auth_token');
+    }
+  }
+
+  private async request<T>(
+    endpoint: string, 
+    options: RequestInit = {}
+  ): Promise<{ success: boolean; data?: T; error?: string }> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    if (options.headers) {
+      Object.assign(headers, options.headers);
+    }
+
+    // ✅ INJECT TOKEN JWT KE HEADER
+    if (this.token) {
+      headers['Authorization'] = `Bearer ${this.token}`;
+    }
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(`${this.baseURL}/${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        return { success: true, data: data.data || data };
+      } else if (data.status === 'error') {
+        return { success: false, error: data.message || 'Request failed' };
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Request failed');
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('API Error:', error);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: 'Request timeout - Server tidak merespons' };
+      }
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        return { success: false, error: 'Tidak dapat terhubung ke server' };
+      }
+      
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  // ✅ ORCHID METHODS
+  async getAllOrchids() {
+    return this.request<any[]>('orchid');
+  }
+
+  async createOrchid(orchidData: {
+    orchid_name: string;
+    orchid_type: string;
+    device_id: string;
+  }) {
+    return this.request<any>('orchid', {
+      method: 'POST',
+      body: JSON.stringify(orchidData),
+    });
+  }
+
+  async deleteOrchid(orchidId: number) {
+    return this.request<any>(`orchid?orchid_id=${orchidId}`, {
+      method: 'DELETE',
+    });
+  }
+}
+
+const apiService = new ApiService(API_BASE_URL);
+
+// ===== TYPES =====
+interface Orchid {
+  orchid_id: number;
+  user_id: number;
+  orchid_name: string;
+  orchid_type: string;
+  min_moisture?: string;
+  max_moisture?: string;
   last_update?: string;
   status?: 'healthy' | 'warning' | 'critical';
   temperature?: number;
   humidity?: number;
   water_level?: number;
+  device_id?: string;
 }
 
 const orchidTypes = [
-  { 
-    id: 'Calanthe', 
-    name: 'Calanthe', 
-    description: 'Anggrek epifit yang tahan cuaca dengan bunga beragam warna.', 
-    tags: ['Tahan panas', 'Berbunga lebat'], 
-    icon: '/calanthe.png',
-    tempRange: '20-30°C',
-    humidityRange: '60-80%'
-  },
-  { 
-    id: 'Phaius', 
-    name: 'Phaius', 
-    description: 'Anggrek kupu-kupu dengan bunga elegan dan tahan lama.', 
-    tags: ['Indoor', 'Elegan'], 
-    icon: '/phaius.png',
-    tempRange: '18-28°C',
-    humidityRange: '65-85%'
-  },
-  { 
-    id: 'Spathoglottis', 
-    name: 'Spathoglottis', 
-    description: 'Dikenal sebagai "Ratu Anggrek" karena bunganya yang besar dan wangi.', 
-    tags: ['Wangi', 'Bunga besar'], 
-    icon: '/spathoglotis.png',
-    tempRange: '22-32°C',
-    humidityRange: '70-90%'
-  }
+  { id: 'Calanthe', name: 'Calanthe', description: 'Anggrek epifit yang tahan cuaca dengan bunga beragam warna.', tags: ['Tahan panas', 'Berbunga lebat'], icon: '/calanthe.png', tempRange: '20-30°C', humidityRange: '60-80%' },
+  { id: 'Phaius', name: 'Phaius', description: 'Anggrek kupu-kupu dengan bunga elegan dan tahan lama.', tags: ['Indoor', 'Elegan'], icon: '/phaius.png', tempRange: '18-28°C', humidityRange: '65-85%' },
+  { id: 'Spathoglottis', name: 'Spathoglottis', description: 'Dikenal sebagai "Ratu Anggrek" karena bunganya yang besar dan wangi.', tags: ['Wangi', 'Bunga besar'], icon: '/spathoglotis.png', tempRange: '22-32°C', humidityRange: '70-90%' }
 ];
 
 const pageStyles = `
@@ -126,7 +200,6 @@ const pageStyles = `
     padding: 1.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
-    cursor: pointer;
     position: relative;
     overflow: hidden;
   }
@@ -461,44 +534,48 @@ const pageStyles = `
 `;
 
 export default function OrchidSelectionPage() {
-  const [plants, setPlants] = useState<Plant[]>([]);
+  const [plants, setPlants] = useState<Orchid[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  // Form state
   const [formData, setFormData] = useState({
-    plant_name: '',
-    plant_type: '',
+    orchid_name: '',
+    orchid_type: '',
     device_id: ''
   });
 
-  // Fetch plants from API
+  // ✅ Fetch Data dengan apiService (otomatis kirim token)
   const fetchPlants = async () => {
-    try {
-      setIsLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api';
-      // Ganti dengan user_id yang sebenarnya dari session/auth
-      const userId = 1; // TODO: Get from auth context
-      
-      const response = await fetch(`${apiUrl}/plants.php?user_id=${userId}`);
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        setPlants(result.data || []);
-      } else {
-        setError(result.message || 'Gagal mengambil data tanaman');
-      }
-    } catch (err) {
-      console.error('Error fetching plants:', err);
-      setError('Gagal terhubung ke server');
-    } finally {
-      setIsLoading(false);
+  try {
+    setIsLoading(true);
+    setError('');
+
+    // ambil user_id
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const response = await apiService.getAllOrchids();
+
+    if (response.success && Array.isArray(response.data)) {
+      setPlants(response.data);
+    } else {
+      setError(response.error || 'Gagal mengambil data anggrek');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setError('Tidak dapat terhubung ke server.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      window.location.href = '/selection';
+      return;
+    }
+    
     fetchPlants();
   }, []);
 
@@ -508,57 +585,39 @@ export default function OrchidSelectionPage() {
     setSuccess('');
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api';
-      const userId = 1; // TODO: Get from auth context
-      
-      const response = await fetch(`${apiUrl}/plants.php`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          ...formData
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        setSuccess('Tanaman berhasil ditambahkan!');
+      const response = await apiService.createOrchid(formData);
+
+      if (response.success) {
+        setSuccess('Anggrek berhasil ditambahkan!');
         setShowAddModal(false);
-        setFormData({ plant_name: '', plant_type: '', device_id: '' });
+        setFormData({ orchid_name: '', orchid_type: '', device_id: '' });
         fetchPlants();
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.message || 'Gagal menambahkan tanaman');
+        setError(response.error || 'Gagal menambahkan anggrek');
       }
     } catch (err) {
-      console.error('Error adding plant:', err);
-      setError('Gagal terhubung ke server');
+      console.error(err);
+      setError('Gagal mengirim data ke server.');
     }
   };
 
-  const handleDeletePlant = async (plantId: number) => {
-    if (!confirm('Yakin ingin menghapus tanaman ini?')) return;
+  const handleDeletePlant = async (orchidId: number) => {
+    if (!confirm('Yakin ingin menghapus anggrek ini?')) return;
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api';
-      
-      const response = await fetch(`${apiUrl}/plants.php?id=${plantId}`, {
-        method: 'DELETE'
-      });
-      
-      const result = await response.json();
-      
-      if (result.status === 'success') {
-        setSuccess('Tanaman berhasil dihapus');
+      const response = await apiService.deleteOrchid(orchidId);
+
+      if (response.success) {
+        setSuccess('Anggrek berhasil dihapus');
         fetchPlants();
+        setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(result.message || 'Gagal menghapus tanaman');
+        setError(response.error || 'Gagal menghapus anggrek');
       }
     } catch (err) {
-      console.error('Error deleting plant:', err);
-      setError('Gagal terhubung ke server');
+      console.error(err);
+      setError('Gagal menghapus data.');
     }
   };
 
@@ -589,7 +648,7 @@ export default function OrchidSelectionPage() {
             <div className="spinner"></div>
           </div>
         )}
-        
+
         <header className="header">
           <h1 className="title">🌸 Orchid Smart Monitoring</h1>
           <p className="subtitle">Kelola dan pantau semua anggrek Anda dalam satu tempat</p>
@@ -598,65 +657,66 @@ export default function OrchidSelectionPage() {
         <div className="contentWrapper">
           {error && <div className="errorMessage">{error}</div>}
           {success && <div className="successMessage">{success}</div>}
-          
-          {/* My Plants Section */}
+
           <section className="myPlantsSection">
             <div className="sectionTitle">
-              <span>🪴 Tanaman Saya ({plants.length})</span>
+              <span>🪴 Anggrek Saya ({plants.length})</span>
               <button className="addButton" onClick={() => setShowAddModal(true)}>
-                <span style={{fontSize: '1.2rem'}}>+</span>
-                Tambah Tanaman
+                <span style={{ fontSize: '1.2rem' }}>+</span>
+                Tambah Anggrek
               </button>
             </div>
-            
+
             {plants.length === 0 ? (
               <div className="emptyState">
-                <h3>Belum ada tanaman</h3>
-                <p>Klik tombol "Tambah Tanaman" untuk memulai monitoring</p>
+                <h3>Belum ada anggrek</h3>
+                <p>Klik tombol "Tambah Anggrek" untuk memulai monitoring</p>
               </div>
             ) : (
               <div className="plantsGrid">
-                {plants.map((plant) => (
-                  <div key={plant.id} className="plantCard">
+                {plants.map((orchid) => (
+                  <div key={orchid.orchid_id} className="plantCard">
                     <div className="plantCardHeader">
                       <div className="plantInfo">
-                        <h3>{plant.plant_name}</h3>
-                        <p className="plantType">{plant.plant_type}</p>
+                        <h3>{orchid.orchid_name}</h3>
+                        <p className="plantType">{orchid.orchid_type}</p>
                       </div>
-                      <span className={`statusBadge ${getStatusColor(plant.status)}`}>
-                        {getStatusText(plant.status)}
+                      <span className={`statusBadge ${getStatusColor(orchid.status)}`}>
+                        {getStatusText(orchid.status)}
                       </span>
                     </div>
-                    
+
                     <div className="plantStats">
                       <div className="statItem">
                         <div className="statLabel">Suhu</div>
-                        <div className="statValue">{plant.temperature || '--'}°C</div>
+                        <div className="statValue">{orchid.temperature || '--'}°C</div>
                       </div>
                       <div className="statItem">
                         <div className="statLabel">Kelembaban</div>
-                        <div className="statValue">{plant.humidity || '--'}%</div>
+                        <div className="statValue">{orchid.humidity || '--'}%</div>
                       </div>
                       <div className="statItem">
                         <div className="statLabel">Air</div>
-                        <div className="statValue">{plant.water_level || '--'}%</div>
+                        <div className="statValue">{orchid.water_level || '--'}%</div>
                       </div>
                     </div>
-                    
-                    <div style={{fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.5rem'}}>
-                      Device ID: {plant.device_id}
+
+                    <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '0.5rem' }}>
+                      Device ID: {orchid.device_id}
                     </div>
-                    
+
                     <div className="plantActions">
-                      <button 
+                      <button
                         className="actionBtn monitorBtn"
-                        onClick={() => window.location.href = `/monitoring?plant_id=${plant.id}&name=${plant.plant_name}`}
+                        onClick={() =>
+                          (window.location.href = `/monitoring?orchid_id=${orchid.orchid_id}&name=${orchid.orchid_name}`)
+                        }
                       >
                         📊 Monitor
                       </button>
-                      <button 
+                      <button
                         className="actionBtn deleteBtn"
-                        onClick={() => handleDeletePlant(plant.id)}
+                        onClick={() => handleDeletePlant(orchid.orchid_id)}
                       >
                         🗑️
                       </button>
@@ -667,7 +727,6 @@ export default function OrchidSelectionPage() {
             )}
           </section>
 
-          {/* Orchid Types Reference */}
           <section className="orchidTypesSection">
             <div className="sectionTitle">
               <span>📚 Referensi Jenis Anggrek</span>
@@ -675,22 +734,23 @@ export default function OrchidSelectionPage() {
             <div className="typeCardsContainer">
               {orchidTypes.map((type) => (
                 <div key={type.id} className="typeCard">
-                  <img 
-                    src={type.icon} 
+                  <img
+                    src={type.icon}
                     alt={type.name}
                     className="typeCardImage"
                     onError={(e) => {
-                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120"%3E%3Crect fill="%23ddd" width="120" height="120"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E🌸%3C/text%3E%3C/svg%3E';
+                      e.currentTarget.src =
+                        'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="120"%3E%3Crect fill="%23ddd" width="120" height="120"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3E🌸%3C/text%3E%3C/svg%3E';
                     }}
                   />
                   <h3>{type.name}</h3>
                   <p className="typeDescription">{type.description}</p>
                   <div className="typeTags">
-                    {type.tags.map(tag => (
+                    {type.tags.map((tag) => (
                       <span key={tag} className="tag">{tag}</span>
                     ))}
                   </div>
-                  <div style={{fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem'}}>
+                  <div style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '0.5rem' }}>
                     <div>🌡️ {type.tempRange}</div>
                     <div>💧 {type.humidityRange}</div>
                   </div>
@@ -700,59 +760,62 @@ export default function OrchidSelectionPage() {
           </section>
         </div>
 
-        {/* Add Plant Modal */}
         {showAddModal && (
           <div className="modal" onClick={() => setShowAddModal(false)}>
             <div className="modalContent" onClick={(e) => e.stopPropagation()}>
               <div className="modalHeader">
-                <h2>➕ Tambah Tanaman Baru</h2>
+                <h2>➕ Tambah Anggrek Baru</h2>
                 <button className="closeBtn" onClick={() => setShowAddModal(false)}>×</button>
               </div>
-              
-              <form onSubmit={handleAddPlant}>
+
+              <div>
                 <div className="formGroup">
-                  <label>Nama Tanaman *</label>
-                  <input 
+                  <label>Nama Anggrek *</label>
+                  <input
                     type="text"
-                    placeholder="Contoh: Anggrek Rumah Depan"
-                    value={formData.plant_name}
-                    onChange={(e) => setFormData({...formData, plant_name: e.target.value})}
+                    placeholder="Contoh: Anggrek Pot Depan"
+                    value={formData.orchid_name}
+                    onChange={(e) => setFormData({ ...formData, orchid_name: e.target.value })}
                     required
                   />
                 </div>
-                
+
                 <div className="formGroup">
                   <label>Jenis Anggrek *</label>
-                  <select 
-                    value={formData.plant_type}
-                    onChange={(e) => setFormData({...formData, plant_type: e.target.value})}
+                  <select
+                    value={formData.orchid_type}
+                    onChange={(e) => setFormData({ ...formData, orchid_type: e.target.value })}
                     required
                   >
                     <option value="">Pilih jenis...</option>
-                    {orchidTypes.map(type => (
+                    {orchidTypes.map((type) => (
                       <option key={type.id} value={type.id}>{type.name}</option>
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="formGroup">
                   <label>Device ID *</label>
-                  <input 
+                  <input
                     type="text"
                     placeholder="Contoh: ESP32-001"
                     value={formData.device_id}
-                    onChange={(e) => setFormData({...formData, device_id: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, device_id: e.target.value })}
                     required
                   />
-                  <small style={{color: '#6b7280', fontSize: '0.85rem'}}>
+                  <small style={{ color: '#6b7280', fontSize: '0.85rem' }}>
                     ID unik perangkat IoT yang terpasang pada pot
                   </small>
                 </div>
-                
-                <button type="submit" className="submitBtn">
-                  Tambahkan Tanaman
+
+                <button 
+                  onClick={handleAddPlant} 
+                  className="submitBtn"
+                  disabled={!formData.orchid_name || !formData.orchid_type || !formData.device_id}
+                >
+                  Tambahkan Anggrek
                 </button>
-              </form>
+              </div>
             </div>
           </div>
         )}

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 // Basic CORS + headers (sesuaikan origin di production)
-header("Access-Control-Allow-Origin: http://localhost:3000");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE,PUT");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -13,6 +13,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+$post_paths = ['/users/register', '/users/login'];
+$current_uri = $_SERVER['REQUEST_URI'];
+$current_method = $_SERVER['REQUEST_METHOD'];
+
+// Lakukan override dari GET ke POST jika path POST yang dicurigai ditemukan
+foreach ($post_paths as $path) {
+    // strpos() mencari '/users/register' atau '/users/login' di dalam URI Lengkap
+    if ($current_method === 'GET' && strpos($current_uri, $path) !== false) {
+        
+        // Secara paksa ganti metode HTTP
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        break; // Hentikan loop setelah ditemukan
+    }
+}
 // simple autoload (jika kamu sudah pakai composer, gunakan autoload composer)
 spl_autoload_register(function ($class) {
     $paths = [
